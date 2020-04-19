@@ -9,6 +9,8 @@ verify_ssl = true
 requests = "*"
 pandas = "*"
 ipython = "*"
+sqlalchemy = "*"
+selenium = "*"
 
 [requires]
 python_version = "3.8"
