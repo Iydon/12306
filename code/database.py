@@ -1,3 +1,6 @@
+__all__ = ('session', 'Admins', 'Users', 'Cities', 'Orders', 'Stations', 'Journeys', 'SeatType', 'Carriages')
+
+
 from sqlalchemy import (
     Column, Sequence, String, Integer, Float, Time, Date, TIMESTAMP,
     ForeignKey, text, create_engine,
@@ -5,8 +8,13 @@ from sqlalchemy import (
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
+from config import database_url
+
 
 Base = declarative_base()
+engine = create_engine(database_url)
+DBSession = sessionmaker(bind=engine)
+session = DBSession()
 
 
 class Admins(Base):
@@ -23,7 +31,7 @@ class Users(Base):
     user_id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
     user_name = Column(String(30), nullable=False)
     phone_number = Column(String(11), nullable=False)
-    ID_card_num = Column(String(18), nullable=False, unique=True)
+    id_card_num = Column(String(18), nullable=False, unique=True)
     password = Column(String(16), nullable=False)
 
 
@@ -84,7 +92,6 @@ class Carriages(Base):
     seat_type_id = Column(Integer, ForeignKey('seat_type.seat_type_id'))
 
 
-
 class Tickets(Base):
     '''
     Question:
@@ -101,13 +108,12 @@ class Tickets(Base):
     arrive_journey = Column(Integer, ForeignKey('journeys.journey_id'))
 
 
-if __name__ == "__main__":
-    # 初始化数据库连接
-    username = 'checker'
-    password = '123456'
-    hostport = '127.0.0.1:5432'
-    database = 'project_2'
-    engine = create_engine(f'postgresql://{username}:{password}@{hostport}/{database}')
-    # 创建DBSession类型
-    DBSession = sessionmaker(bind=engine)
-    session = DBSession()
+if __name__ == '__main__':
+    print('Admins', session.query(Admins).count())
+    print('Users', session.query(Users).count())
+    print('Cities', session.query(Cities).count())
+    print('Orders', session.query(Orders).count())
+    print('Stations', session.query(Stations).count())
+    print('Journeys', session.query(Journeys).count())
+    print('SeatType', session.query(SeatType).count())
+    print('Carriage', session.query(Carriages).count())
