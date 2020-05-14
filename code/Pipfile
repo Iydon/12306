@@ -1,16 +1,14 @@
 [[source]]
 name = "pypi"
-url = "https://pypi.mirrors.ustc.edu.cn/simple"
+url = "https://mirrors.aliyun.com/pypi/simple/"
 verify_ssl = true
 
 [dev-packages]
 
 [packages]
-requests = "*"
-pandas = "*"
 ipython = "*"
 sqlalchemy = "*"
-selenium = "*"
+psycopg2 = "*"
 
 [requires]
 python_version = "3.8"

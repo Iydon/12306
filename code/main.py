@@ -4,7 +4,7 @@ Example:
         >>> from data import load_stations, load_trains
         >>> stations = load_stations()
         >>> trains = load_trains()
-    -2
+    - 2
         >>> from ly import Train
         >>> t = Train()
 '''
