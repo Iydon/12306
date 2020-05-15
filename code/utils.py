@@ -15,6 +15,7 @@ class check:
 
     @classmethod
     def id_card(cls, id_card):
+        assert id_card.replace('X', '').isdigit()
         return session.execute(f"select is_id_valid('{id_card}');").first()[0]
 
     @classmethod
