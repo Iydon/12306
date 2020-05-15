@@ -9,6 +9,7 @@ verify_ssl = true
 ipython = "*"
 sqlalchemy = "*"
 psycopg2 = "*"
+werkzeug = "*"
 
 [requires]
 python_version = "3.8"

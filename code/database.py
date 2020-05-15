@@ -8,6 +8,8 @@ from sqlalchemy import (
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
+from werkzeug.security import generate_password_hash, check_password_hash
+
 from config import database_url
 
 
@@ -20,25 +22,47 @@ session = DBSession()
 class Admins(Base):
     __tablename__ = 'admins'
 
-    admin_id = Column(Integer, Sequence('admin_id_seq'), primary_key=True)
+    admin_id = Column(Integer, primary_key=True)
     admin_name = Column(String(30), nullable=False, unique=True)
-    password = Column(String(20), nullable=False)
+    password = Column(String(100), nullable=False)
+
+    def __init__(self, admin_name, password):
+        self.admin_name = name
+        self.set_password(password)
+
+    def set_password(self, password):
+        self.password = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password, password)
 
 
 class Users(Base):
     __tablename__ = 'users'
 
-    user_id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
+    user_id = Column(Integer, primary_key=True)
     user_name = Column(String(30), nullable=False)
     phone_number = Column(String(11), nullable=False)
     id_card_num = Column(String(18), nullable=False, unique=True)
-    password = Column(String(16), nullable=False)
+    password = Column(String(100), nullable=False)
+
+    def __init__(self, user_name, phone_number, id_card_num, password):
+        self.user_name = user_name
+        self.phone_number = phone_number
+        self.id_card_num = id_card_num
+        self.set_password(password)
+
+    def set_password(self, password):
+        self.password = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password, password)
 
 
 class Cities(Base):
     __tablename__ = 'cities'
 
-    city_id = Column(Integer, Sequence('city_id_seq'), primary_key=True)
+    city_id = Column(Integer, primary_key=True)
     city_name = Column(String(30), nullable=False)
     province = Column(String(30), nullable=False)
 
@@ -46,7 +70,7 @@ class Cities(Base):
 class Orders(Base):
     __tablename__ = 'orders'
 
-    order_id = Column(Integer, Sequence('order_id_seq'), primary_key=True)
+    order_id = Column(Integer, primary_key=True)
     order_status = Column(Integer, nullable=False)
     order_price = Column(Float, nullable=False)
     create_date = Column(TIMESTAMP, nullable=False, default=text('current_timestamp + interval \'8 hours\''))
@@ -56,7 +80,7 @@ class Orders(Base):
 class Stations(Base):
     __tablename__ = 'stations'
 
-    station_id = Column(Integer, Sequence('station_id_seq'), primary_key=True)
+    station_id = Column(Integer, primary_key=True)
     station_name = Column(String(30), nullable=False, unique=True)
     city_id = Column(Integer, ForeignKey('cities.city_id'))
 
@@ -64,7 +88,7 @@ class Stations(Base):
 class Journeys(Base):
     __tablename__ = 'journeys'
 
-    journey_id = Column(Integer, Sequence('journey_id_seq'), primary_key=True)
+    journey_id = Column(Integer, primary_key=True)
     train_id = Column(String(8), nullable=False, unique=True)
     station_index = Column(Integer, nullable=False, unique=True)
     distance = Column(Integer, nullable=False)
@@ -78,7 +102,7 @@ class Journeys(Base):
 class SeatType(Base):
     __tablename__ = 'seat_type'
 
-    seat_type_id = Column(Integer, Sequence('seat_type_id_seq'), primary_key=True)
+    seat_type_id = Column(Integer, primary_key=True)
     seat_name = Column(String(20), nullable=False, unique=True)
     seat_basic_price = Column(Float, nullable=False)
 
@@ -99,7 +123,7 @@ class Tickets(Base):
     '''
     __tablename__ = 'tickets'
 
-    ticket_id = Column(Integer, Sequence('ticket_id_seq'), primary_key=True)
+    ticket_id = Column(Integer, primary_key=True)
     carriage_id = Column(Integer, nullable=False)
     depart_date = Column(Date, nullable=False)
     seat_num = Column(String(10), nullable=False)
