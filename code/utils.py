@@ -108,7 +108,7 @@ class get:
 
     @classmethod
     def train_ids_by_stations(cls, from_station, to_station=None):
-        '''列车直达（无倒车行为）
+        '''列车直达（无换乘行为）
 
         Argument:
             - from_station: str
@@ -139,6 +139,19 @@ class get:
         # find the train_id where from_station and to_station in it
         data = dict(from_train_ids)
         return [i for i, j in to_train_ids if (i in data and j>data[i])]
+
+    @classmethod
+    def train_ids_by_stations_transfer(cls, from_station, to_station):
+        '''列车连接（有换乘行为）
+
+        Argument:
+            - from_station: str
+            - to_station: str
+
+        Return:
+            - list[str]
+        '''
+        raise NotImplementedError
 
     @classmethod
     def journeys_by_train_id(cls, train_id):
