@@ -1,5 +1,8 @@
 import re
 
+from collections import Counter
+from warnings import warn
+
 from database import (
     Admins, Users, Cities, Orders, Stations, Journeys, SeatType, Carriages,
     session,
@@ -104,17 +107,32 @@ class get:
         return cls._compress(cls._by(Stations.station_name, city_id=city_id, all=True))
 
     @classmethod
-    def train_ids_by_stations(cls, from_station, to_station):
-        '''
+    def train_ids_by_stations(cls, from_station, to_station=None):
+        '''列车直达（无倒车行为）
+
         Argument:
             - from_station: str
-            - to_station: str
+            - to_station: str or None
 
         Return:
             - list[str]
+
+        Note:
+            - 环线：厦门、南昌、福州南、三亚、包头东、海口东
         '''
+        # same stations
+        if to_station is None or from_station==to_station:
+            station_id = cls._by(Stations.station_id, station_name=from_station)
+            train_ids = cls._by(Journeys.train_id, station_id=station_id, all=True)
+            counter = Counter(cls._compress(train_ids))
+            return [k for k, v in counter.items() if v > 1]
+        # different stations
         from_station_id = cls._by(Stations.station_id, station_name=from_station)
         to_station_id = cls._by(Stations.station_id, station_name=to_station)
+        if not (from_station_id is None or to_station_id):
+            args = f'from_station_id={from_station_id}, to_station_id={to_station_id}'
+            warn(f'Station does not exist: {args}')
+            return list()
         columns = Journeys.train_id, Journeys.station_index
         from_train_ids = cls._by(*columns, station_id=from_station_id, all=True)
         to_train_ids = cls._by(*columns, station_id=to_station_id, all=True)
@@ -129,7 +147,7 @@ class get:
             - train_id: str
 
         Return:
-            - list[str]
+            - list[Journeys]
         '''
         return cls._by(Journeys, train_id=train_id, all=True)
 
@@ -139,8 +157,14 @@ class get:
 
     @classmethod
     def _by(cls, *models, all=False, **condition):
-        query = session.query(*models).filter_by(**condition)
-        return query.all() if all else query.first()
+        try:
+            query = session.query(*models).filter_by(**condition)
+            return query.all() if all else query.first()
+        except:
+            args = f'models={repr(models)}, all={all}, condition={condition}'
+            warn(f'Query fails: {args}')
+            session.rollback()
+            return list() if all else None
 
 
 class registered:
