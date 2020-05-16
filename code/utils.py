@@ -123,6 +123,17 @@ class get:
         return [i for i, j in to_train_ids if (i in data and j>data[i])]
 
     @classmethod
+    def journeys_by_train_id(cls, train_id):
+        '''
+        Argument:
+            - train_id: str
+
+        Return:
+            - list[str]
+        '''
+        return cls._by(Journeys, train_id=train_id, all=True)
+
+    @classmethod
     def _compress(cls, data):
         return [d[0] for d in data]
 

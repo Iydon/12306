@@ -98,6 +98,12 @@ class Journeys(Base):
     depart_day = Column(Integer)
     station_id = Column(Integer, ForeignKey('stations.station_id'))
 
+    def __repr__(self):
+        f = lambda x: not x.startswith('_')
+        g = lambda k, v: f'{k}={repr(v)}'
+        items = self.__dict__.items()
+        return f'Journeys({", ".join(g(k, v) for k, v in items if f(k))})'
+
 
 class SeatType(Base):
     __tablename__ = 'seat_type'
