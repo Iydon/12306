@@ -26,8 +26,8 @@ class Admin(Base):
     name = Column(String(30), nullable=False, unique=True)
     password = Column(String(100), nullable=False)
 
-    def __init__(self, admin_name, password):
-        self.admin_name = admin_name
+    def __init__(self, name, password):
+        self.name = name
         self.set_password(password)
 
     def set_password(self, password):
@@ -46,10 +46,10 @@ class User(Base):
     id_card_number = Column(String(18), nullable=False, unique=True)
     password = Column(String(100), nullable=False)
 
-    def __init__(self, user_name, phone_number, id_card_num, password):
-        self.user_name = user_name
+    def __init__(self, name, phone_number, id_card, password):
+        self.name = name
         self.phone_number = phone_number
-        self.id_card_num = id_card_num
+        self.id_card_number = id_card
         self.set_password(password)
 
     def set_password(self, password):

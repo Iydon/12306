@@ -191,7 +191,7 @@ class registered:
         if chpasswd:
             admin.set_password(password)
         else:
-            admin = Admin(admin_name=name, password=password)
+            admin = Admin(name=name, password=password)
             session.add(admin)
         session.commit()
         return admin
@@ -205,8 +205,7 @@ class registered:
             user.set_password(password)
         else:
             user = User(
-                user_name=name, phone_number=phone,
-                id_card_num=id_card, password=password
+                name=name, phone_number=phone, id_card=id_card, password=password
             )
             session.add(user)
         session.commit()
