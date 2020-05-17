@@ -229,15 +229,17 @@ class add:
     '''处理订单，添加数据到数据库
     '''
     @classmethod
-    def _sec(cls, time):
+    def _sec_diff(cls, begin_time, end_time, day=0):
         '''
         Argument:
-            - time: datetime.time
+            - begin_time, end_time: datetime.time
+            - day: int, default is 0
 
         Return:
             - int, seconds
         '''
         f = lambda t: 60*(60*t.hour + t.minute) + t.second
+        return f(end_time) - f(begin_time) + 86400*day
 
 
 if __name__ == '__main__':
