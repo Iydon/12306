@@ -4,7 +4,7 @@ from collections import Counter
 from warnings import warn
 
 from database import (
-    Admins, Users, Cities, Orders, Stations, Journeys, SeatType, Carriages,
+    Admin, User, City, Order, Station, Journey, SeatType, Capacity,
     session,
 )
 
@@ -44,9 +44,9 @@ class get:
             - name: str
 
         Return:
-            - Admins
+            - Admin
         '''
-        return cls._by(Admins, admin_name=name)
+        return cls._by(Admin, name=name)
 
     @classmethod
     def user(cls, id_card):
@@ -55,9 +55,9 @@ class get:
             - id_card: str
 
         Return:
-            - Users
+            - User
         '''
-        return cls._by(Users, id_card_num=id_card)
+        return cls._by(User, id_card_number=id_card)
 
     @classmethod
     def cities(cls):
@@ -65,7 +65,7 @@ class get:
         Return:
             - list[str]
         '''
-        return cls._compress(session.query(Cities.city_name))
+        return cls._compress(session.query(City.name))
 
     @classmethod
     def province(cls):
@@ -73,7 +73,7 @@ class get:
         Return:
             - list[str]
         '''
-        return cls._compress(session.query(Cities.province.distinct()))
+        return cls._compress(session.query(City.province.distinct()))
 
     @classmethod
     def stations(cls):
@@ -81,7 +81,7 @@ class get:
         Return:
             - list[str]
         '''
-        return cls._compress(session.query(Stations.station_name).all())
+        return cls._compress(session.query(Station.name).all())
 
     @classmethod
     def cities_by_province(cls, province):
@@ -92,7 +92,7 @@ class get:
         Return:
             - list[str]
         '''
-        return cls._compress(cls._by(Cities.city_name, province=province, all=True))
+        return cls._compress(cls._by(City.name, province=province, all=True))
 
     @classmethod
     def stations_by_city(cls, city_name):
@@ -103,11 +103,12 @@ class get:
         Return:
             - list[str]
         '''
-        city_id = cls._by(Cities.city_id, city_name=city_name)
-        return cls._compress(cls._by(Stations.station_name, city_id=city_id, all=True))
+        city_id = cls._by(City.id, name=city_name)
+        print(city_id)
+        return cls._compress(cls._by(Station.name, city_id=city_id, all=True))
 
     @classmethod
-    def train_ids_by_stations(cls, from_station, to_station=None):
+    def train_numbers_by_stations(cls, from_station, to_station=None):
         '''列车直达（无换乘行为）
 
         Argument:
@@ -122,26 +123,26 @@ class get:
         '''
         # same stations
         if to_station is None or from_station==to_station:
-            station_id = cls._by(Stations.station_id, station_name=from_station)
-            train_ids = cls._by(Journeys.train_id, station_id=station_id, all=True)
-            counter = Counter(cls._compress(train_ids))
+            station_id = cls._by(Station.id, name=from_station)
+            numbers = cls._by(Journey.train_number, station_id=station_id, all=True)
+            counter = Counter(cls._compress(numbers))
             return [k for k, v in counter.items() if v > 1]
         # different stations
-        from_station_id = cls._by(Stations.station_id, station_name=from_station)
-        to_station_id = cls._by(Stations.station_id, station_name=to_station)
+        from_station_id = cls._by(Station.id, name=from_station)
+        to_station_id = cls._by(Station.id, name=to_station)
         if not (from_station_id is None or to_station_id):
             args = f'from_station_id={from_station_id}, to_station_id={to_station_id}'
             warn(f'Station does not exist: {args}')
             return list()
-        columns = Journeys.train_id, Journeys.station_index
-        from_train_ids = cls._by(*columns, station_id=from_station_id, all=True)
-        to_train_ids = cls._by(*columns, station_id=to_station_id, all=True)
-        # find the train_id where from_station and to_station in it
-        data = dict(from_train_ids)
-        return [i for i, j in to_train_ids if (i in data and j>data[i])]
+        columns = Journey.train_number, Journey.station_index
+        from_train_numbers = cls._by(*columns, station_id=from_station_id, all=True)
+        to_train_numbers = cls._by(*columns, station_id=to_station_id, all=True)
+        # find the train_number where from_station and to_station in it
+        data = dict(from_train_numbers)
+        return [i for i, j in to_train_numbers if (i in data and j>data[i])]
 
     @classmethod
-    def train_ids_by_stations_transfer(cls, from_station, to_station):
+    def train_numbers_by_stations_transfer(cls, from_station, to_station):
         '''列车连接（有换乘行为）
 
         Argument:
@@ -150,22 +151,19 @@ class get:
 
         Return:
             - list[str]
-
-        Note:
-            - 广度优先遍历实现最少停站，DIJKSTRA实现单源最短路径，相交矩阵配合BFS实现的最少换乘算法
         '''
         raise NotImplementedError
 
     @classmethod
-    def journeys_by_train_id(cls, train_id):
+    def journeys_by_train_number(cls, train_number):
         '''
         Argument:
-            - train_id: str
+            - train_number: str
 
         Return:
-            - list[Journeys]
+            - list[Journey]
         '''
-        return cls._by(Journeys, train_id=train_id, all=True)
+        return cls._by(Journey, train_number=train_number, all=True)
 
     @classmethod
     def _compress(cls, data):
@@ -193,7 +191,7 @@ class registered:
         if chpasswd:
             admin.set_password(password)
         else:
-            admin = Admins(admin_name=name, password=password)
+            admin = Admin(admin_name=name, password=password)
             session.add(admin)
         session.commit()
         return admin
@@ -206,7 +204,7 @@ class registered:
         if chpasswd:
             user.set_password(password)
         else:
-            user = Users(
+            user = User(
                 user_name=name, phone_number=phone,
                 id_card_num=id_card, password=password
             )
