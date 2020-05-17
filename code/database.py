@@ -89,7 +89,7 @@ class Journey(Base):
     __tablename__ = 'journey'
 
     id = Column(Integer, primary_key=True)
-    train_id = Column(String(8), nullable=False, unique=True)
+    train_number = Column(String(20), nullable=False, unique=True)
     station_index = Column(Integer, nullable=False, unique=True)
     distance = Column(Integer, nullable=False)
     arrive_time = Column(Time)
