@@ -20,14 +20,14 @@ session = DBSession()
 
 
 class Admins(Base):
-    __tablename__ = 'admins'
+    __tablename__ = 'admin'
 
-    admin_id = Column(Integer, primary_key=True)
-    admin_name = Column(String(30), nullable=False, unique=True)
+    id = Column(Integer, primary_key=True)
+    name = Column(String(30), nullable=False, unique=True)
     password = Column(String(100), nullable=False)
 
     def __init__(self, admin_name, password):
-        self.admin_name = name
+        self.admin_name = admin_name
         self.set_password(password)
 
     def set_password(self, password):
@@ -38,12 +38,12 @@ class Admins(Base):
 
 
 class Users(Base):
-    __tablename__ = 'users'
+    __tablename__ = 'user'
 
-    user_id = Column(Integer, primary_key=True)
-    user_name = Column(String(30), nullable=False)
+    id = Column(Integer, primary_key=True)
+    name = Column(String(30), nullable=False)
     phone_number = Column(String(11), nullable=False)
-    id_card_num = Column(String(18), nullable=False, unique=True)
+    id_card_number = Column(String(18), nullable=False, unique=True)
     password = Column(String(100), nullable=False)
 
     def __init__(self, user_name, phone_number, id_card_num, password):
@@ -60,35 +60,35 @@ class Users(Base):
 
 
 class Cities(Base):
-    __tablename__ = 'cities'
+    __tablename__ = 'city'
 
-    city_id = Column(Integer, primary_key=True)
-    city_name = Column(String(30), nullable=False)
+    id = Column(Integer, primary_key=True)
+    name = Column(String(30), nullable=False)
     province = Column(String(30), nullable=False)
 
 
 class Orders(Base):
-    __tablename__ = 'orders'
+    __tablename__ = 'order'
 
-    order_id = Column(Integer, primary_key=True)
-    order_status = Column(Integer, nullable=False)
-    order_price = Column(Float, nullable=False)
+    id = Column(Integer, primary_key=True)
+    status = Column(Integer, nullable=False)
+    price = Column(Float, nullable=False)
     create_date = Column(TIMESTAMP, nullable=False, default=text('current_timestamp + interval \'8 hours\''))
-    person = Column(Integer, ForeignKey('users.user_id'))
+    user_id = Column(Integer, ForeignKey('user.id'))
 
 
 class Stations(Base):
-    __tablename__ = 'stations'
+    __tablename__ = 'station'
 
-    station_id = Column(Integer, primary_key=True)
-    station_name = Column(String(30), nullable=False, unique=True)
-    city_id = Column(Integer, ForeignKey('cities.city_id'))
+    id = Column(Integer, primary_key=True)
+    name = Column(String(30), nullable=False, unique=True)
+    city_id = Column(Integer, ForeignKey('city.id'))
 
 
 class Journeys(Base):
-    __tablename__ = 'journeys'
+    __tablename__ = 'journey'
 
-    journey_id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True)
     train_id = Column(String(8), nullable=False, unique=True)
     station_index = Column(Integer, nullable=False, unique=True)
     distance = Column(Integer, nullable=False)
@@ -96,30 +96,30 @@ class Journeys(Base):
     depart_time = Column(Time)
     arrive_day = Column(Integer)
     depart_day = Column(Integer)
-    station_id = Column(Integer, ForeignKey('stations.station_id'))
+    station_id = Column(Integer, ForeignKey('station.id'))
 
     def __repr__(self):
         f = lambda x: not x.startswith('_')
         g = lambda k, v: f'{k}={repr(v)}'
         items = self.__dict__.items()
-        return f'Journeys({", ".join(g(k, v) for k, v in items if f(k))})'
+        return f'Journey({", ".join(g(k, v) for k, v in items if f(k))})'
 
 
 class SeatType(Base):
     __tablename__ = 'seat_type'
 
-    seat_type_id = Column(Integer, primary_key=True)
-    seat_name = Column(String(20), nullable=False, unique=True)
-    seat_basic_price = Column(Float, nullable=False)
+    id = Column(Integer, primary_key=True)
+    name = Column(String(20), nullable=False, unique=True)
+    basic_price = Column(Float, nullable=False)
 
 
 class Carriages(Base):
-    __tablename__ = 'carriages'
+    __tablename__ = 'capacity'
 
-    train_number = Column(String(8), primary_key=True, nullable=False)
+    train_number = Column(String(20), primary_key=True, nullable=False)
     carriage_index = Column(Integer, primary_key=True, nullable=False)
     seat_num = Column(Integer, nullable=False)
-    seat_type_id = Column(Integer, ForeignKey('seat_type.seat_type_id'))
+    seat_type = Column(Integer, ForeignKey('seat_type.id'))
 
 
 class Tickets(Base):
@@ -127,15 +127,15 @@ class Tickets(Base):
     Question:
         - column without carriage train number: depart_journey and arrive_journey
     '''
-    __tablename__ = 'tickets'
+    __tablename__ = 'ticket'
 
     ticket_id = Column(Integer, primary_key=True)
     carriage_id = Column(Integer, nullable=False)
     depart_date = Column(Date, nullable=False)
     seat_num = Column(String(10), nullable=False)
-    order_id = Column(Integer, ForeignKey('orders.order_id'))
-    depart_journey = Column(Integer, ForeignKey('journeys.journey_id'))
-    arrive_journey = Column(Integer, ForeignKey('journeys.journey_id'))
+    order_id = Column(Integer, ForeignKey('order.id'))
+    depart_journey = Column(Integer, ForeignKey('journey.id'))
+    arrive_journey = Column(Integer, ForeignKey('journey.id'))
 
 
 if __name__ == '__main__':
