@@ -1,12 +1,14 @@
-import re
-
 from collections import Counter
+from enum import Enum
 from warnings import warn
 
 from database import (
     Admin, User, City, Order, Station, Journey, SeatType, Capacity,
     session,
 )
+
+
+status = Enum('status', ('booked', 'paid', 'canceled'))
 
 
 class check:
@@ -81,7 +83,18 @@ class get:
         Return:
             - list[str]
         '''
-        return cls._compress(session.query(Station.name).all())
+        return cls._compress(session.query(Station.name))
+
+    @classmethod
+    def train_numbers(cls):
+        '''
+        Return:
+            - list[str]
+
+        Note:
+            - 跨天：K529
+        '''
+        return cls._compress(session.query(Journey.train_number.distinct()))
 
     @classmethod
     def cities_by_province(cls, province):
@@ -212,5 +225,46 @@ class registered:
         return user
 
 
+class add:
+    '''处理订单，添加数据到数据库
+    '''
+    @classmethod
+    def _sec(cls, time):
+        '''
+        Argument:
+            - time: datetime.time
+
+        Return:
+            - int, seconds
+        '''
+        f = lambda t: 60*(60*t.hour + t.minute) + t.second
+
+
 if __name__ == '__main__':
-    pass
+    if get.admin('admin_2') is None:
+        registered.admin('admin_2', '12345')
+    if get.admin('user_2') is None:
+        registered.user('user_2', '18912341234', '44190019971024031X', '1234567')
+    registered.admin('user_2', '123456', chpasswd=True)
+    registered.user('user_2', '18912341234', '44190019971024031X', '123456', chpasswd=True)
+
+    print('Password of admin_2 is correct')
+    print(check.admin_password('admin_2', '123456'))
+
+    print('Password of user_2 is correct')
+    print(check.user_password('44190019971024031X', '123456'))
+
+    print('Train numbers from 成都东 to 深圳北（没有直达的）')
+    print(get.train_numbers_by_stations('成都东', '深圳北'))
+
+    print('How many trains from 广州南 to 深圳北？')
+    print(len(get.train_numbers_by_stations('广州南','深圳北')))
+
+    print('How many trains from 深圳北 to 广州南？')
+    print(len(get.train_numbers_by_stations('深圳北','广州南')))
+
+    print('Circle line from 厦门 to 厦门')
+    print(get.train_numbers_by_stations('厦门', '厦门'))
+
+    print('Journey of D6315')
+    print(get.journeys_by_train_number('D6315'))

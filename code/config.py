@@ -1,4 +1,4 @@
-__all__ = ('database_url', )
+__all__ = ('database_url', 'residence_time')
 
 
 # database configuration
@@ -7,3 +7,6 @@ password = '123456'
 hostport = '127.0.0.1:5432'
 database = 'project_2'
 database_url = f'postgresql://{username}:{password}@{hostport}/{database}'
+
+# ticket configuration
+residence_time = 30 * 60  # seconds
