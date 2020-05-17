@@ -1,4 +1,4 @@
-__all__ = ('session', 'Admins', 'Users', 'Cities', 'Orders', 'Stations', 'Journeys', 'SeatType', 'Carriages')
+__all__ = ('session', 'Admin', 'User', 'City', 'Order', 'Station', 'Journey', 'SeatType', 'Capacity')
 
 
 from sqlalchemy import (
@@ -19,7 +19,7 @@ DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
 
-class Admins(Base):
+class Admin(Base):
     __tablename__ = 'admin'
 
     id = Column(Integer, primary_key=True)
@@ -37,7 +37,7 @@ class Admins(Base):
         return check_password_hash(self.password, password)
 
 
-class Users(Base):
+class User(Base):
     __tablename__ = 'user'
 
     id = Column(Integer, primary_key=True)
@@ -59,7 +59,7 @@ class Users(Base):
         return check_password_hash(self.password, password)
 
 
-class Cities(Base):
+class City(Base):
     __tablename__ = 'city'
 
     id = Column(Integer, primary_key=True)
@@ -67,7 +67,7 @@ class Cities(Base):
     province = Column(String(30), nullable=False)
 
 
-class Orders(Base):
+class Order(Base):
     __tablename__ = 'order'
 
     id = Column(Integer, primary_key=True)
@@ -77,7 +77,7 @@ class Orders(Base):
     user_id = Column(Integer, ForeignKey('user.id'))
 
 
-class Stations(Base):
+class Station(Base):
     __tablename__ = 'station'
 
     id = Column(Integer, primary_key=True)
@@ -85,7 +85,7 @@ class Stations(Base):
     city_id = Column(Integer, ForeignKey('city.id'))
 
 
-class Journeys(Base):
+class Journey(Base):
     __tablename__ = 'journey'
 
     id = Column(Integer, primary_key=True)
@@ -113,7 +113,7 @@ class SeatType(Base):
     basic_price = Column(Float, nullable=False)
 
 
-class Carriages(Base):
+class Capacity(Base):
     __tablename__ = 'capacity'
 
     train_number = Column(String(20), primary_key=True, nullable=False)
@@ -139,11 +139,11 @@ class Tickets(Base):
 
 
 if __name__ == '__main__':
-    print('Admins', session.query(Admins).count())
-    print('Users', session.query(Users).count())
-    print('Cities', session.query(Cities).count())
-    print('Orders', session.query(Orders).count())
-    print('Stations', session.query(Stations).count())
-    print('Journeys', session.query(Journeys).count())
+    print('Admin', session.query(Admin).count())
+    print('User', session.query(User).count())
+    print('City', session.query(City).count())
+    print('Order', session.query(Order).count())
+    print('Station', session.query(Station).count())
+    print('Journey', session.query(Journey).count())
     print('SeatType', session.query(SeatType).count())
-    print('Carriage', session.query(Carriages).count())
+    print('Capacity', session.query(Capacity).count())
