@@ -150,6 +150,9 @@ class get:
 
         Return:
             - list[str]
+
+        Note:
+            - 广度优先遍历实现最少停站，DIJKSTRA实现单源最短路径，相交矩阵配合BFS实现的最少换乘算法
         '''
         raise NotImplementedError
 
