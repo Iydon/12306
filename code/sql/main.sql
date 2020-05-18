@@ -29,6 +29,8 @@ create table station (
     name varchar(30) not null constraint stations_station_name_key unique,
     city_id integer constraint stations_city_id_fkey references city
 );
+create index station_id_index on journey (station_id, station_index, id);
+
 
 create table journey (
     id serial not null constraint journeys_pkey primary key,
