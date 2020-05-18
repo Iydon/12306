@@ -163,9 +163,27 @@ class get:
             - to_station: str
 
         Return:
-            - list[str]
+            - iteration[list[train_number, Station, train_number]]
         '''
-        raise NotImplementedError
+        from_station_id = cls._by(Station.id, name=from_station)
+        columns = Journey.train_number, Journey.station_index
+        from_train_numbers = cls._by(*columns, station_id=from_station_id, all=True)
+        to_station_id = cls._by(Station.id, name=to_station)
+        to_train_numbers = cls._by(*columns, station_id=to_station_id, all=True)
+        inter_columns = Journey.station_id, Journey.station_index
+        # [train_number, Station, train_number]
+        for number, index in from_train_numbers:
+            ids = (
+                i for i, j in cls._by(*inter_columns, train_number=number, all=True)
+                if j > index
+            )
+            for id in ids:
+                from_second_train_numbers = cls._by(*columns, station_id=id, all=True)
+                data = dict(from_second_train_numbers)
+                yield from (
+                    [number, get._by(Station, id=id), i]
+                    for i, j in to_train_numbers if (i in data and j > data[i])
+                )
 
     @classmethod
     def journeys_by_train_number(cls, train_number):
@@ -270,3 +288,14 @@ if __name__ == '__main__':
 
     print('Journey of D6315')
     print(get.journeys_by_train_number('D6315'))
+
+    print('重庆北(19)到深圳北')
+    print(get.train_numbers_by_stations('重庆北', '深圳北'))
+
+    print('利川(2594)到深圳北（451）')
+    print(get.train_numbers_by_stations('利川', '深圳北'))
+
+    print('成都东 到 深圳北')
+    i = get.train_numbers_by_stations_transfer('成都东', '深圳北' )
+    for _ in range(10):
+        print(next(i))

@@ -18,6 +18,12 @@ engine = create_engine(database_url)
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
+def __repr__(self):
+    f = lambda x: not x.startswith('_')
+    g = lambda k, v: f'{k}={repr(v)}'
+    items = self.__dict__.items()
+    return f'{self.__tablename__}({", ".join(g(k, v) for k, v in items if f(k))})'
+Base.__repr__ = __repr__
 
 class Admin(Base):
     __tablename__ = 'admin'
@@ -97,12 +103,6 @@ class Journey(Base):
     arrive_day = Column(Integer)
     depart_day = Column(Integer)
     station_id = Column(Integer, ForeignKey('station.id'))
-
-    def __repr__(self):
-        f = lambda x: not x.startswith('_')
-        g = lambda k, v: f'{k}={repr(v)}'
-        items = self.__dict__.items()
-        return f'Journey({", ".join(g(k, v) for k, v in items if f(k))})'
 
 
 class SeatType(Base):
