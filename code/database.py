@@ -2,7 +2,7 @@ __all__ = ('session', 'Admin', 'User', 'City', 'Order', 'Station', 'Journey', 'S
 
 
 from sqlalchemy import (
-    Column, Sequence, String, Integer, Float, Time, Date, TIMESTAMP,
+    Column, Sequence, String, Integer, Float, Time, Date, TIMESTAMP, Boolean,
     ForeignKey, text, create_engine,
 )
 from sqlalchemy.orm import sessionmaker
@@ -141,6 +141,7 @@ class Ticket(Base):
     train_number = Column(String(20), nullable=False)
     depart_date = Column(Date, nullable=False)
     seat_num = Column(Integer, nullable=False)
+    is_print = Column(Boolean, nullable=True)
     order_id = Column(Integer, ForeignKey('order.id'))
     depart_journey = Column(Integer, ForeignKey('journey.id'))
     arrive_journey = Column(Integer, ForeignKey('journey.id'))

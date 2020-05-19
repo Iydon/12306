@@ -369,6 +369,22 @@ class add:
         cls._all(Order(**kwargs))
 
     @classmethod
+    def ticket(cls, order_id):
+        '''
+        Argument:
+            - order_id: int
+        '''
+        order = get._by(Order, id=order_id, lock='read')
+        assert order is not None and order.status==status.booked.value
+        order.status = status.paid.value
+        ticket = Ticket(
+            carriage_index=order.carriage_index, train_number=order.train_number,
+            depart_date=order.depart_date, seat_num=order.seat_num, order_id=order_id,
+            depart_journey=order.depart_journey, arrive_journey=order.arrive_journey,
+        )
+        cls._all(ticket)
+
+    @classmethod
     def _all(cls, *instances):
         try:
             session.add_all(instances)

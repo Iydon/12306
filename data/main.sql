@@ -75,7 +75,8 @@ create table ticket (
     arrive_journey integer not null constraint tickets_journeys_fkey2 references journey,
     depart_date date not null,
     seat_num integer not null,
-    train_number varchar(20) not null
+    train_number varchar(20) not null,
+    is_print boolean default false
 );
 
 create table if not exists district (
