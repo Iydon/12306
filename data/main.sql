@@ -15,6 +15,7 @@ create table capacity (
     carriage_index integer not null,
     seat_type integer not null constraint seat_type_carriages_fkey references seat_type,
     seat_num integer not null,
+    is_valid boolean default true,
     constraint capacity_pkey1 primary key (train_number, carriage_index)
 );
 

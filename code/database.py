@@ -128,6 +128,7 @@ class Capacity(Base):
     train_number = Column(String(20), primary_key=True, nullable=False)
     carriage_index = Column(Integer, primary_key=True, nullable=False)
     seat_num = Column(Integer, nullable=False)
+    is_valid = Column(Boolean, nullable=True, default=True)
     seat_type = Column(Integer, ForeignKey('seat_type.id'))
 
 
