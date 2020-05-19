@@ -3,11 +3,11 @@ from datetime import date, datetime
 from enum import Enum
 from warnings import warn
 
-from database import (
+from .database import (
     Admin, User, City, Order, Station, Journey, SeatType, Capacity, Ticket,
     session,
 )
-from config import is_cached, residence_seconds
+from .config import is_cached, residence_seconds
 
 
 status = Enum('status', ('booked', 'paid', 'canceled'))

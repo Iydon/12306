@@ -6,6 +6,7 @@ COPY . /app
 WORKDIR /app
 
 RUN pip install pipenv \
-    && pipenv install --system --deploy
+    && pipenv install --system --deploy \
+    && export FLASK_APP=code
 
-CMD ["python", "app.py"]
+CMD ["flask", "run"]

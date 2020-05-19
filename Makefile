@@ -1,8 +1,8 @@
+HOST = 0.0.0.0
 PORT = 8080
 
 run:
-	# python3 app.py
-	echo NotImplementedError
+	flask run --host $(HOST) --port $(PORT)
 
 open:
 	sudo iptables -I INPUT -p tcp --dport $(PORT) -j ACCEPT

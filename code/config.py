@@ -13,3 +13,6 @@ is_cached = True
 
 # order and ticket configuration
 residence_seconds = 30 * 60
+
+# flask configuration
+pass
