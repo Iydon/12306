@@ -7,7 +7,7 @@ from database import (
     Admin, User, City, Order, Station, Journey, SeatType, Capacity, Ticket,
     session,
 )
-from config import is_cached
+from config import is_cached, residence_seconds
 
 
 status = Enum('status', ('booked', 'paid', 'canceled'))
@@ -40,6 +40,11 @@ class Cache:
             return train_number in self.train_numbers
         return get._by(Journey, train_number=train_number) is not None
 
+    def update(self):
+        for key in tuple(self.__dict__.keys()):
+            if key.startswith('_'):
+                delattr(self, key)
+
     def _api(self, name, function, *args, **kwargs):
         if self.is_cached:
             attr = getattr(self, f'_{name}', None)
@@ -50,6 +55,23 @@ class Cache:
         return function(*args, **kwargs)
 
 cache = Cache(is_cached)
+
+
+class update:
+    '''更新数据
+    '''
+    @classmethod
+    def cache(cls):
+        cache.update()
+
+    @classmethod
+    def orders(cls):
+        '''加锁（read）
+        '''
+        now = datetime.now()
+        for order in get._by(Order, status=status.booked.value, iter=True, lock='read'):
+            if (now - order.create_date).seconds > residence_seconds:
+                order.status = status.canceled.value
 
 
 class check:
@@ -81,26 +103,28 @@ class get:
     '''数据库数据获取
     '''
     @classmethod
-    def admin(cls, name):
+    def admin(cls, name, lock=None):
         '''
         Argument:
             - name: str
+            - lock: NoneType or str
 
         Return:
             - Admin
         '''
-        return cls._by(Admin, name=name)
+        return cls._by(Admin, name=name, lock=lock)
 
     @classmethod
-    def user(cls, id_card):
+    def user(cls, id_card, lock=None):
         '''
         Argument:
             - id_card: str
+            - lock: NoneType or str
 
         Return:
             - User
         '''
-        return cls._by(User, id_card_number=id_card)
+        return cls._by(User, id_card_number=id_card, lock=lock)
 
     @classmethod
     def cities(cls):
@@ -254,13 +278,17 @@ class get:
         return [d[0] for d in data]
 
     @classmethod
-    def _by(cls, *models, all=False, count=False, **condition):
+    def _by(cls, *models, all=False, count=False, iter=False, lock=None, **condition):
         try:
             query = session.query(*models).filter_by(**condition)
+            if lock:
+                query = query.with_lockmode(lock)
             if all:
                 return query.all()
             if count:
                 return query.count()
+            if iter:
+                return query
             return query.first()
         except:
             args = f'models={repr(models)}, all={all}, condition={condition}'
@@ -274,7 +302,7 @@ class registered:
     '''
     @classmethod
     def admin(cls, name, password, chpasswd=False):
-        admin = get.admin(name)
+        admin = get.admin(name, lock='update')
         assert chpasswd is (admin is not None)
         if chpasswd:
             admin.set_password(password)
@@ -287,7 +315,7 @@ class registered:
     @classmethod
     def user(cls, name, phone, id_card, password, chpasswd=False):
         assert check.phone(phone) and check.id_card(id_card)
-        user = get.user(id_card)
+        user = get.user(id_card, lock='read')
         assert chpasswd is (user is not None)
         if chpasswd:
             user.set_password(password)
@@ -304,7 +332,7 @@ class add:
     '''处理订单，添加数据到数据库
     '''
     @classmethod
-    def order(cls, user_id, train_number, carriage_index, seat_num, depart_date):
+    def order(cls, user_id, train_number, carriage_index, seat_num, depart_date, depart_station, arrive_station):
         '''
         Argument:
             - user_id: int
@@ -312,31 +340,43 @@ class add:
             - carriage_index: int
             - seat_num: int
             - depart_date: datetime.datetime
-
-        price = Column(Float, nullable=False)
-        seat_num = Column(String(10), nullable=False)
-        depart_date = Column(TIMESTAMP, nullable=False)
-        depart_journey = Column(Integer, ForeignKey('journey.id'))
-        arrive_journey = Column(Integer, ForeignKey('journey.id'))
+            - depart_station: str
+            - arrive_station: str
         '''
+        # check whether the order is valid
         assert get._by(User, id=user_id) is not None
         # assert cache.has_train_number(train_number)  # cache train_numbers
         capacity = get._by(Capacity, train_number=train_number, carriage_index=carriage_index)
         assert capacity is not None and 1<=seat_num<=capacity.seat_num  # int
+        for order in get._by(Order, train_number=train_number, carriage_index=carriage_index,
+                seat_num=seat_num, depart_date=depart_date, iter=True):
+            assert order.status == status.canceled.value
+        assert depart_date >= date.today()
+        depart_station_id = get._by(Station.id, name=depart_station)
+        arrive_station_id = get._by(Station.id, name=arrive_station)
+        depart_station = get._by(Journey, train_number=train_number, station_id=depart_station_id)
+        arrive_station = get._by(Journey, train_number=train_number, station_id=arrive_station_id)
+        distance = arrive_station.distance - depart_station.distance
+        assert distance > 0
+        # add order
+        basic_price, = get._by(SeatType.basic_price, id=capacity.seat_type)
         kwargs = {
-            'status': status.booked.value,
-            'create_date': datetime.now(),
-            'train_number': train_number,
-            'carriage_index': carriage_index,
+            'status': status.booked.value, 'create_date': datetime.now(), 'user_id': user_id,
+            'train_number': train_number, 'carriage_index': carriage_index, 'seat_num': seat_num,
+            'depart_date': depart_date, 'depart_journey': depart_station.id,
+            'arrive_journey': arrive_station.id, 'price': basic_price*distance,
         }
+        cls._all(Order(**kwargs))
 
     @classmethod
-    def _by(cls, *instance):
+    def _all(cls, *instances):
         try:
-            session.add_all(instance)
+            session.add_all(instances)
+            session.commit()
             return True
         except:
-            warn(f'Add fails: instances={instance}')
+            warn(f'Add fails: instances={instances}')
+            session.rollback()
             return False
 
     @classmethod
@@ -396,3 +436,7 @@ if __name__ == '__main__':
     print('余票信息 D1 1 号车厢')
     number = get.remaining_tickets_number('D1', 1, date(2020, 5, 20))
     print(number)
+
+    print('订票')
+    add.order(1, 'D1', 1, 10, date(2020, 5, 22), '北京', '沈阳南')
+    add.order(1, 'D1', 1, 11, date(2020, 5, 22), '北京', '沈阳南')

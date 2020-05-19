@@ -12,4 +12,4 @@ database_url = f'postgresql://{username}:{password}@{hostport}/{database}'
 is_cached = True
 
 # order and ticket configuration
-residence_time = 30 * 60  # seconds
+residence_seconds = 30 * 60
