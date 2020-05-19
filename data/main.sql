@@ -62,7 +62,7 @@ create table "order" (
     depart_journey integer not null constraint order_journey_id_fk references journey,
     arrive_journey integer not null constraint order_journey_id_fk_2 references journey,
     carriage_index integer not null,
-    seat_num varchar(10) not null,
+    seat_num integer not null,
     depart_date timestamp not null,
     train_number varchar(20) not null
 );
@@ -74,7 +74,7 @@ create table ticket (
     depart_journey integer not null constraint tickets_journeys_fkey1 references journey,
     arrive_journey integer not null constraint tickets_journeys_fkey2 references journey,
     depart_date date not null,
-    seat_num varchar(10) not null,
+    seat_num integer not null,
     train_number varchar(20) not null
 );
 

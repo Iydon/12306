@@ -1,4 +1,4 @@
-__all__ = ('session', 'Admin', 'User', 'City', 'Order', 'Station', 'Journey', 'SeatType', 'Capacity')
+__all__ = ('session', 'Admin', 'User', 'City', 'Order', 'Station', 'Journey', 'SeatType', 'Capacity', 'Ticket')
 
 
 from sqlalchemy import (
@@ -82,7 +82,7 @@ class Order(Base):
     price = Column(Float, nullable=False)
     create_date = Column(TIMESTAMP, nullable=False, default=text('current_timestamp + interval \'8 hours\''))
     carriage_index = Column(Integer, nullable=False)
-    seat_num = Column(String(10), nullable=False)
+    seat_num = Column(Integer, nullable=False)
     depart_date = Column(TIMESTAMP, nullable=False)
     train_number = Column(String(20), nullable=False)
     user_id = Column(Integer, ForeignKey('user.id'))
@@ -129,7 +129,7 @@ class Capacity(Base):
     seat_type = Column(Integer, ForeignKey('seat_type.id'))
 
 
-class Tickets(Base):
+class Ticket(Base):
     '''
     Question:
         - column without carriage train number: depart_journey and arrive_journey
@@ -140,7 +140,7 @@ class Tickets(Base):
     carriage_index = Column(Integer, nullable=False)
     train_number = Column(String(20), nullable=False)
     depart_date = Column(Date, nullable=False)
-    seat_num = Column(String(10), nullable=False)
+    seat_num = Column(Integer, nullable=False)
     order_id = Column(Integer, ForeignKey('order.id'))
     depart_journey = Column(Integer, ForeignKey('journey.id'))
     arrive_journey = Column(Integer, ForeignKey('journey.id'))
@@ -155,3 +155,4 @@ if __name__ == '__main__':
     print('Journey', session.query(Journey).count())
     print('SeatType', session.query(SeatType).count())
     print('Capacity', session.query(Capacity).count())
+    print('Ticket', session.query(Ticket).count())

@@ -1,14 +1,55 @@
 from collections import Counter
+from datetime import date, datetime
 from enum import Enum
 from warnings import warn
 
 from database import (
-    Admin, User, City, Order, Station, Journey, SeatType, Capacity,
+    Admin, User, City, Order, Station, Journey, SeatType, Capacity, Ticket,
     session,
 )
+from config import is_cached
 
 
 status = Enum('status', ('booked', 'paid', 'canceled'))
+
+
+class Cache:
+    '''数据缓存
+    '''
+    def __init__(self, is_cached):
+        self.is_cached = is_cached
+
+    @property
+    def stations(self):
+        return self._api('station', get.stations)
+
+    @property
+    def cities(self):
+        return self._api('cities', get.cities)
+
+    @property
+    def provinces(self):
+        return self._api('provinces', get.provinces)
+
+    @property
+    def train_numbers(self):
+        return self._api('train_numbers', get.train_numbers)
+
+    def has_train_number(self, train_number):
+        if self.is_cached:
+            return train_number in self.train_numbers
+        return get._by(Journey, train_number=train_number) is not None
+
+    def _api(self, name, function, *args, **kwargs):
+        if self.is_cached:
+            attr = getattr(self, f'_{name}', None)
+            if not attr:
+                attr = function(*args, **kwargs)
+                setattr(self, f'_{name}', attr)
+            return attr
+        return function(*args, **kwargs)
+
+cache = Cache(is_cached)
 
 
 class check:
@@ -70,7 +111,7 @@ class get:
         return cls._compress(session.query(City.name))
 
     @classmethod
-    def province(cls):
+    def provinces(cls):
         '''
         Return:
             - list[str]
@@ -197,14 +238,30 @@ class get:
         return cls._by(Journey, train_number=train_number, all=True)
 
     @classmethod
+    def remaining_tickets_number(cls, train_number, carriage_index, depart_date):
+        '''
+        Argument:
+            - train_number: str
+            - carriage_index: int
+            - depart_date: datetime.date
+        '''
+        total = cls._by(Capacity.seat_num, train_number=train_number, carriage_index=carriage_index)
+        used = cls._by(Ticket, depart_date=depart_date, count=True)
+        return total[0] - used
+
+    @classmethod
     def _compress(cls, data):
         return [d[0] for d in data]
 
     @classmethod
-    def _by(cls, *models, all=False, **condition):
+    def _by(cls, *models, all=False, count=False, **condition):
         try:
             query = session.query(*models).filter_by(**condition)
-            return query.all() if all else query.first()
+            if all:
+                return query.all()
+            if count:
+                return query.count()
+            return query.first()
         except:
             args = f'models={repr(models)}, all={all}, condition={condition}'
             warn(f'Query fails: {args}')
@@ -247,6 +304,37 @@ class add:
     '''处理订单，添加数据到数据库
     '''
     @classmethod
+    def order(cls, user_id, train_number):
+        '''
+        Argument:
+            - user_id: int
+            - train_number: str
+
+        price = Column(Float, nullable=False)
+        carriage_index = Column(Integer, nullable=False)
+        seat_num = Column(String(10), nullable=False)
+        depart_date = Column(TIMESTAMP, nullable=False)
+        depart_journey = Column(Integer, ForeignKey('journey.id'))
+        arrive_journey = Column(Integer, ForeignKey('journey.id'))
+        '''
+        assert get._by(User, id=user_id) is not None
+        assert cache.has_train_number(train_number)
+        kwargs = {
+            'status': status.booked.value,
+            'create_date': datetime.now(),
+            'train_number': train_number,
+        }
+
+    @classmethod
+    def _by(cls, *instance):
+        try:
+            session.add_all(instance)
+            return True
+        except:
+            warn(f'Add fails: instances={instance}')
+            return False
+
+    @classmethod
     def _sec_diff(cls, begin_time, end_time, day=0):
         '''
         Argument:
@@ -263,7 +351,7 @@ class add:
 if __name__ == '__main__':
     if get.admin('admin') is None:
         registered.admin('admin', '12345')
-    if get.user('user_1') is None:
+    if get.user('44190019971024031X') is None:
         registered.user('user_1', '18912341234', '44190019971024031X', '1234567')
     registered.admin('admin', '123456', chpasswd=True)
     registered.user('user_1', '18912341234', '44190019971024031X', '123456', chpasswd=True)
@@ -299,3 +387,7 @@ if __name__ == '__main__':
     i = get.train_numbers_by_stations_transfer('成都东', '深圳北' )
     for _ in range(10):
         print(next(i))
+
+    print('余票信息 D1 1 号车厢')
+    number = get.remaining_tickets_number('D1', 1, date(2020, 5, 20))
+    print(number)
