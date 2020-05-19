@@ -74,6 +74,40 @@ class update:
                 order.status = status.canceled.value
 
     @classmethod
+    def train(cls, train_number, carriage_index, seat_type=None, seat_num=None):
+        '''
+        Argument:
+            - train_number: str
+            - carriage_index: int
+            - seat_type: int, in [1, 18]
+            - seat_num: int
+        '''
+        carriage = get._by(Capacity, train_number=train_number, carriage_index=carriage_index, is_valid=True)
+        if seat_type is not None:
+            assert get._by(SeatType, id=seat_type) is not None
+            carriage.seat_type = seat_type
+        if seat_num is not None:
+            carriage.seat_num = seat_num
+        cls._commit()
+
+    @classmethod
+    def station(cls, name, city_name_or_id=None, is_valid=None):
+        '''
+        Argument:
+            - name: str
+            - city_name_or_id: NoneType or str or int
+            - is_valid: NoneType or bool
+        '''
+        station = get._by(Station, name=name)
+        if city_name_or_id is not None:
+            if isinstance(city_name_or_id, str):
+                city_name_or_id, = get._by(City.id, name=city_name_or_id)
+            station.city_id = city_name_or_id
+        if is_valid is not None:
+            station.is_valid = is_valid
+        cls._commit()
+
+    @classmethod
     def admin_password(cls, name, password):
         return registered.admin(name, password, True)
 
@@ -87,6 +121,10 @@ class update:
         '''
         ticket = get._by(Ticket, id=ticket_id, lock='read')
         ticket.is_print = True
+        cls._commit()
+
+    @classmethod
+    def _commit(cls):
         session.commit()
 
 
@@ -122,7 +160,6 @@ class get:
         Argument:
             - name: str
             - lock: NoneType or str
-
         Return:
             - Admin
         '''
@@ -134,7 +171,6 @@ class get:
         Argument:
             - id_card: str
             - lock: NoneType or str
-
         Return:
             - User
         '''
@@ -169,7 +205,6 @@ class get:
         '''
         Return:
             - list[str]
-
         Note:
             - 跨天：K529
         '''
@@ -180,7 +215,6 @@ class get:
         '''
         Argument:
             - province: str
-
         Return:
             - list[str]
         '''
@@ -191,7 +225,6 @@ class get:
         '''
         Argument:
             - city_name: str
-
         Return:
             - list[str]
         '''
@@ -204,7 +237,6 @@ class get:
         Argument:
             - user_id: int
             - iter: bool
-
         Return:
             - list[Order]
         '''
@@ -218,7 +250,6 @@ class get:
         Argument:
             - user_id: int
             - iter: bool
-
         Return:
             - list[Ticket]
         '''
@@ -229,14 +260,11 @@ class get:
     @classmethod
     def train_numbers_by_stations(cls, from_station, to_station=None):
         '''列车直达（无换乘行为）
-
         Argument:
             - from_station: str
             - to_station: str or None
-
         Return:
             - list[str]
-
         Note:
             - 环线：厦门、南昌、福州南、三亚、包头东、海口东
         '''
@@ -263,11 +291,9 @@ class get:
     @classmethod
     def train_numbers_by_stations_transfer(cls, from_station, to_station):
         '''列车连接（有换乘行为）
-
         Argument:
             - from_station: str
             - to_station: str
-
         Return:
             - iteration[list[train_number, Station, train_number]]
         '''
@@ -296,7 +322,6 @@ class get:
         '''
         Argument:
             - train_number: str
-
         Return:
             - list[Journey]
         '''
@@ -310,7 +335,7 @@ class get:
             - carriage_index: int
             - depart_date: datetime.date
         '''
-        total = cls._by(Capacity.seat_num, train_number=train_number, carriage_index=carriage_index)
+        total = cls._by(Capacity.seat_num, train_number=train_number, carriage_index=carriage_index, is_valid=True)
         used = cls._by(Ticket, depart_date=depart_date, count=True)
         return total[0] - used
 
@@ -388,7 +413,7 @@ class add:
         # check whether the order is valid
         assert get._by(User, id=user_id) is not None
         # assert cache.has_train_number(train_number)  # cache train_numbers
-        capacity = get._by(Capacity, train_number=train_number, carriage_index=carriage_index)
+        capacity = get._by(Capacity, train_number=train_number, carriage_index=carriage_index, is_valid=True)
         assert capacity is not None and 1<=seat_num<=capacity.seat_num  # int
         for order in get._by(Order, train_number=train_number, carriage_index=carriage_index,
                 seat_num=seat_num, depart_date=depart_date, iter=True):
@@ -434,6 +459,36 @@ class add:
         return ticket
 
     @classmethod
+    def train(cls, train_number, seat_types, seat_nums):
+        '''
+        Argument:
+            - train_number: str
+            - seat_types: tuple[int]
+            - seat_nums: tuple[int]
+        '''
+        for ith, (key, val) in enumerate(zip(seat_types, seat_nums)):
+            assert get._by(SeatType, id=key) is not None
+            carriage = Capacity(
+                train_number=train_number, carriage_index=ith+1,
+                seat_type=key, seat_num=val
+            )
+            cls._all(carriage)
+
+    @classmethod
+    def station(cls, name, city_name_or_id):
+        '''
+        Argument:
+            - name: str
+            - city_name_or_id: str or int
+        '''
+        station = get._by(Station, name=name)
+        if isinstance(city_name_or_id, str):
+            city_name_or_id, = get._by(City.id, name=city_name_or_id)
+        id = get._by(Station, count=True)
+        station = Station(id=id+1, name=name, city_id=city_name_or_id)
+        cls._all(station)
+
+    @classmethod
     def admin(cls, name, password):
         return registered.admin(name, password, False)
 
@@ -459,7 +514,6 @@ class add:
         Argument:
             - begin_time, end_time: datetime.time
             - day: int, default is 0
-
         Return:
             - int, seconds
         '''
@@ -503,6 +557,21 @@ class delete:
                     journey.arrive_day = journey.arrive_time = None
                 if right and journey.station_index==index-1:
                     journey.depart_day = journey.depart_time = None
+        cls._commit()
+
+    @classmethod
+    def train(cls, train_number):
+        '''
+        Argument:
+            - train_number: str
+        '''
+        for train in get._by(Capacity, train_number=train_number, is_valid=True, iter=True):
+            train.is_valid = False
+        for journey in get._by(Journey, train_number=train_number, is_valid=True, iter=True):
+            journey.station_index = - journey.station_index
+            journey.arrive_day = journey.arrive_time = None
+            journey.depart_day = journey.depart_time = None
+            journey.is_valid = False
         cls._commit()
 
     @classmethod
