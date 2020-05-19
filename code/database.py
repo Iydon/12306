@@ -83,7 +83,7 @@ class Order(Base):
     create_date = Column(TIMESTAMP, nullable=False, default=text('current_timestamp + interval \'8 hours\''))
     carriage_index = Column(Integer, nullable=False)
     seat_num = Column(Integer, nullable=False)
-    depart_date = Column(TIMESTAMP, nullable=False)
+    depart_date = Column(Date, nullable=False)
     train_number = Column(String(20), nullable=False)
     user_id = Column(Integer, ForeignKey('user.id'))
     depart_journey = Column(Integer, ForeignKey('journey.id'))

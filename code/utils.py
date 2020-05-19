@@ -304,25 +304,30 @@ class add:
     '''处理订单，添加数据到数据库
     '''
     @classmethod
-    def order(cls, user_id, train_number):
+    def order(cls, user_id, train_number, carriage_index, seat_num, depart_date):
         '''
         Argument:
             - user_id: int
             - train_number: str
+            - carriage_index: int
+            - seat_num: int
+            - depart_date: datetime.datetime
 
         price = Column(Float, nullable=False)
-        carriage_index = Column(Integer, nullable=False)
         seat_num = Column(String(10), nullable=False)
         depart_date = Column(TIMESTAMP, nullable=False)
         depart_journey = Column(Integer, ForeignKey('journey.id'))
         arrive_journey = Column(Integer, ForeignKey('journey.id'))
         '''
         assert get._by(User, id=user_id) is not None
-        assert cache.has_train_number(train_number)
+        # assert cache.has_train_number(train_number)  # cache train_numbers
+        capacity = get._by(Capacity, train_number=train_number, carriage_index=carriage_index)
+        assert capacity is not None and 1<=seat_num<=capacity.seat_num  # int
         kwargs = {
             'status': status.booked.value,
             'create_date': datetime.now(),
             'train_number': train_number,
+            'carriage_index': carriage_index,
         }
 
     @classmethod
