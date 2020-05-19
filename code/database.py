@@ -25,6 +25,7 @@ def __repr__(self):
     return f'{self.__tablename__}({", ".join(g(k, v) for k, v in items if f(k))})'
 Base.__repr__ = __repr__
 
+
 class Admin(Base):
     __tablename__ = 'admin'
 
@@ -80,7 +81,13 @@ class Order(Base):
     status = Column(Integer, nullable=False)
     price = Column(Float, nullable=False)
     create_date = Column(TIMESTAMP, nullable=False, default=text('current_timestamp + interval \'8 hours\''))
+    carriage_index = Column(Integer, nullable=False)
+    seat_num = Column(String(10), nullable=False)
+    depart_date = Column(TIMESTAMP, nullable=False)
+    train_number = Column(String(20), nullable=False)
     user_id = Column(Integer, ForeignKey('user.id'))
+    depart_journey = Column(Integer, ForeignKey('journey.id'))
+    arrive_journey = Column(Integer, ForeignKey('journey.id'))
 
 
 class Station(Base):
@@ -129,8 +136,9 @@ class Tickets(Base):
     '''
     __tablename__ = 'ticket'
 
-    ticket_id = Column(Integer, primary_key=True)
-    carriage_id = Column(Integer, nullable=False)
+    id = Column(Integer, primary_key=True)
+    carriage_index = Column(Integer, nullable=False)
+    train_number = Column(String(20), nullable=False)
     depart_date = Column(Date, nullable=False)
     seat_num = Column(String(10), nullable=False)
     order_id = Column(Integer, ForeignKey('order.id'))
