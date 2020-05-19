@@ -7,8 +7,6 @@ import json
 import requests
 import time
 
-from selenium import webdriver
-
 from .config import constid_path
 from .utils import lazy_property
 
@@ -115,6 +113,8 @@ class Train:
 
 
     def update_constid(self):
+        from selenium import webdriver
+
         if isinstance(self._browser, str):
             self._browser = getattr(webdriver, self._browser)()
         url = 'https://www.ly.com/huochepiao/Pages/Search.aspx?FromStation=beijing&ToStation=shanghai'

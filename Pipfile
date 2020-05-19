@@ -10,6 +10,9 @@ ipython = "*"
 sqlalchemy = "*"
 psycopg2 = "*"
 werkzeug = "*"
+requests = "*"
+selenium = "*"
+pandas = "*"
 
 [requires]
 python_version = "3.8"
