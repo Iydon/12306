@@ -261,17 +261,17 @@ class add:
 
 
 if __name__ == '__main__':
-    if get.admin('admin_2') is None:
-        registered.admin('admin_2', '12345')
-    if get.admin('user_2') is None:
-        registered.user('user_2', '18912341234', '44190019971024031X', '1234567')
-    registered.admin('user_2', '123456', chpasswd=True)
-    registered.user('user_2', '18912341234', '44190019971024031X', '123456', chpasswd=True)
+    if get.admin('admin') is None:
+        registered.admin('admin', '12345')
+    if get.user('user_1') is None:
+        registered.user('user_1', '18912341234', '44190019971024031X', '1234567')
+    registered.admin('admin', '123456', chpasswd=True)
+    registered.user('user_1', '18912341234', '44190019971024031X', '123456', chpasswd=True)
 
-    print('Password of admin_2 is correct')
-    print(check.admin_password('admin_2', '123456'))
+    print('Password of admin is correct')
+    print(check.admin_password('admin', '123456'))
 
-    print('Password of user_2 is correct')
+    print('Password of user_1 is correct')
     print(check.user_password('44190019971024031X', '123456'))
 
     print('Train numbers from 成都东 to 深圳北（没有直达的）')
