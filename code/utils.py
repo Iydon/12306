@@ -73,6 +73,21 @@ class update:
             if (now - order.create_date).seconds > residence_seconds:
                 order.status = status.canceled.value
 
+    @classmethod
+    def admin_password(cls, name, password):
+        return registered.admin(name, password, True)
+
+    @classmethod
+    def user_password(cls, id_card, password):
+        return registered.user(None, None, id_card, password, True)
+
+    @classmethod
+    def ticket_print(cls, ticket_id):
+        '''出票更新 Ticket.is_print
+        '''
+        ticket = get._by(Ticket, id=ticket_id, lock='read')
+        ticket.is_print = False
+
 
 class check:
     '''检查合法性等
@@ -89,13 +104,11 @@ class check:
     @classmethod
     def admin_password(cls, name, password):
         admin = get.admin(name)
-        assert admin is not None
         return admin.check_password(password)
 
     @classmethod
     def user_password(cls, id_card, password):
         user = get.user(id_card)
-        assert user is not None
         return user.check_password(password)
 
 
@@ -182,8 +195,35 @@ class get:
             - list[str]
         '''
         city_id = cls._by(City.id, name=city_name)
-        print(city_id)
         return cls._compress(cls._by(Station.name, city_id=city_id, all=True))
+
+    @classmethod
+    def orders_by_user_id(cls, user_id, iter=False):
+        '''
+        Argument:
+            - user_id: int
+            - iter: bool
+
+        Return:
+            - list[Order]
+        '''
+        if iter:
+            return get._by(Order, user_id=user_id, iter=True)
+        return get._by(Order, user_id=1, all=True)
+
+    @classmethod
+    def tickets_by_user_id(cls, user_id, iter=False):
+        '''
+        Argument:
+            - user_id: int
+            - iter: bool
+
+        Return:
+            - list[Ticket]
+        '''
+        if iter:
+            return get._by(Ticket, user_id=user_id, iter=True)
+        return get._by(Ticket, user_id=1, all=True)
 
     @classmethod
     def train_numbers_by_stations(cls, from_station, to_station=None):
@@ -314,7 +354,8 @@ class registered:
 
     @classmethod
     def user(cls, name, phone, id_card, password, chpasswd=False):
-        assert check.phone(phone) and check.id_card(id_card)
+        if not chpasswd:
+            assert check.phone(phone) and check.id_card(id_card)
         user = get.user(id_card, lock='read')
         assert chpasswd is (user is not None)
         if chpasswd:
@@ -366,7 +407,9 @@ class add:
             'depart_date': depart_date, 'depart_journey': depart_station.id,
             'arrive_journey': arrive_station.id, 'price': basic_price*distance,
         }
-        cls._all(Order(**kwargs))
+        order = Order(**kwargs)
+        cls._all(order)
+        return order
 
     @classmethod
     def ticket(cls, order_id):
@@ -383,6 +426,15 @@ class add:
             depart_journey=order.depart_journey, arrive_journey=order.arrive_journey,
         )
         cls._all(ticket)
+        return ticket
+
+    @classmethod
+    def admin(cls, name, password):
+        return registered.admin(name, password, False)
+
+    @classmethod
+    def user(cls, name, phone, id_card, password):
+        return registered.user(name, phone, id_card, password, False)
 
     @classmethod
     def _all(cls, *instances):
@@ -414,8 +466,8 @@ if __name__ == '__main__':
         registered.admin('admin', '12345')
     if get.user('44190019971024031X') is None:
         registered.user('user_1', '18912341234', '44190019971024031X', '1234567')
-    registered.admin('admin', '123456', chpasswd=True)
-    registered.user('user_1', '18912341234', '44190019971024031X', '123456', chpasswd=True)
+    update.admin_password('admin', '123456')
+    update.user_password('44190019971024031X', '123456')
 
     print('Password of admin is correct')
     print(check.admin_password('admin', '123456'))
