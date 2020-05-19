@@ -27,7 +27,7 @@ Index on `order`, `user`, `admin` several tables
 
 - #### Trigger 
 
-  ![trigger](/Users/zhengruiqi/Documents/junior/2020spring/数据库/project2/12306/images/trigger.png)
+  ![trigger](images/trigger.png)
 
 
 
