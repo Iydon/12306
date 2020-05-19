@@ -95,6 +95,7 @@ class Station(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(30), nullable=False, unique=True)
+    is_valid = Column(Boolean, nullable=True, default=True)
     city_id = Column(Integer, ForeignKey('city.id'))
 
 
@@ -109,6 +110,7 @@ class Journey(Base):
     depart_time = Column(Time)
     arrive_day = Column(Integer)
     depart_day = Column(Integer)
+    is_valid = Column(Boolean, nullable=True, default=True)
     station_id = Column(Integer, ForeignKey('station.id'))
 
 
@@ -141,7 +143,7 @@ class Ticket(Base):
     train_number = Column(String(20), nullable=False)
     depart_date = Column(Date, nullable=False)
     seat_num = Column(Integer, nullable=False)
-    is_print = Column(Boolean, nullable=True)
+    is_print = Column(Boolean, nullable=True, default=False)
     order_id = Column(Integer, ForeignKey('order.id'))
     depart_journey = Column(Integer, ForeignKey('journey.id'))
     arrive_journey = Column(Integer, ForeignKey('journey.id'))

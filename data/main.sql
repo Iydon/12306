@@ -27,6 +27,7 @@ create table city (
 create table station (
     id serial not null constraint stations_pkey primary key,
     name varchar(30) not null constraint stations_station_name_key unique,
+    is_valid boolean default true,
     city_id integer constraint stations_city_id_fkey references city
 );
 
@@ -40,6 +41,7 @@ create table journey (
     arrive_day integer,
     depart_day integer,
     distance integer not null,
+    is_valid boolean default true,
     constraint journeys_train_number_station_index_key unique (train_number, station_index)
 );
 create index station_id_index on journey (station_id, station_index, id);

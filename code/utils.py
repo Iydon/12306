@@ -38,7 +38,7 @@ class Cache:
     def has_train_number(self, train_number):
         if self.is_cached:
             return train_number in self.train_numbers
-        return get._by(Journey, train_number=train_number) is not None
+        return get._by(Journey, train_number=train_number, is_valid=True) is not None
 
     def update(self):
         for key in tuple(self.__dict__.keys()):
@@ -86,7 +86,8 @@ class update:
         '''出票更新 Ticket.is_print
         '''
         ticket = get._by(Ticket, id=ticket_id, lock='read')
-        ticket.is_print = False
+        ticket.is_print = True
+        session.commit()
 
 
 class check:
@@ -161,7 +162,7 @@ class get:
         Return:
             - list[str]
         '''
-        return cls._compress(session.query(Station.name))
+        return cls._compress(cls._by(Station.name, is_valid=True))
 
     @classmethod
     def train_numbers(cls):
@@ -172,7 +173,7 @@ class get:
         Note:
             - 跨天：K529
         '''
-        return cls._compress(session.query(Journey.train_number.distinct()))
+        return cls._compress(cls._by(Journey.train_number.distinct(), is_valid=True))
 
     @classmethod
     def cities_by_province(cls, province):
@@ -195,7 +196,7 @@ class get:
             - list[str]
         '''
         city_id = cls._by(City.id, name=city_name)
-        return cls._compress(cls._by(Station.name, city_id=city_id, all=True))
+        return cls._compress(cls._by(Station.name, city_id=city_id, is_valid=True, all=True))
 
     @classmethod
     def orders_by_user_id(cls, user_id, iter=False):
@@ -241,19 +242,19 @@ class get:
         '''
         # same stations
         if to_station is None or from_station==to_station:
-            station_id = cls._by(Station.id, name=from_station)
-            numbers = cls._by(Journey.train_number, station_id=station_id, all=True)
+            station_id = cls._by(Station.id, name=from_station, is_valid=True)
+            numbers = cls._by(Journey.train_number, station_id=station_id, is_valid=True, all=True)
             counter = Counter(cls._compress(numbers))
             return [k for k, v in counter.items() if v > 1]
         # different stations
-        from_station_id = cls._by(Station.id, name=from_station)
-        to_station_id = cls._by(Station.id, name=to_station)
+        from_station_id = cls._by(Station.id, name=from_station, is_valid=True)
+        to_station_id = cls._by(Station.id, name=to_station, is_valid=True)
         if not (from_station_id is None or to_station_id):
             args = f'from_station_id={from_station_id}, to_station_id={to_station_id}'
             warn(f'Station does not exist: {args}')
             return list()
         columns = Journey.train_number, Journey.station_index
-        from_train_numbers = cls._by(*columns, station_id=from_station_id, all=True)
+        from_train_numbers = cls._by(*columns, station_id=from_station_id, is_valid=True, all=True)
         to_train_numbers = cls._by(*columns, station_id=to_station_id, all=True)
         # find the train_number where from_station and to_station in it
         data = dict(from_train_numbers)
@@ -270,28 +271,28 @@ class get:
         Return:
             - iteration[list[train_number, Station, train_number]]
         '''
-        from_station_id = cls._by(Station.id, name=from_station)
+        from_station_id = cls._by(Station.id, name=from_station, is_valid=True)
         columns = Journey.train_number, Journey.station_index
-        from_train_numbers = cls._by(*columns, station_id=from_station_id, all=True)
-        to_station_id = cls._by(Station.id, name=to_station)
+        from_train_numbers = cls._by(*columns, station_id=from_station_id, is_valid=True, all=True)
+        to_station_id = cls._by(Station.id, name=to_station, is_valid=True)
         to_train_numbers = cls._by(*columns, station_id=to_station_id, all=True)
         inter_columns = Journey.station_id, Journey.station_index
         # [train_number, Station, train_number]
         for number, index in from_train_numbers:
             ids = (
-                i for i, j in cls._by(*inter_columns, train_number=number, all=True)
+                i for i, j in cls._by(*inter_columns, train_number=number, is_valid=True, all=True)
                 if j > index
             )
             for id in ids:
                 from_second_train_numbers = cls._by(*columns, station_id=id, all=True)
                 data = dict(from_second_train_numbers)
                 yield from (
-                    [number, get._by(Station, id=id), i]
+                    [number, get._by(Station, id=id, is_valid=True), i]
                     for i, j in to_train_numbers if (i in data and j > data[i])
                 )
 
     @classmethod
-    def journeys_by_train_number(cls, train_number):
+    def journeys_by_train_number(cls, train_number, lock=None):
         '''
         Argument:
             - train_number: str
@@ -299,7 +300,7 @@ class get:
         Return:
             - list[Journey]
         '''
-        return cls._by(Journey, train_number=train_number, all=True)
+        return cls._by(Journey, train_number=train_number, is_valid=True, all=True, lock=lock)
 
     @classmethod
     def remaining_tickets_number(cls, train_number, carriage_index, depart_date):
@@ -393,10 +394,10 @@ class add:
                 seat_num=seat_num, depart_date=depart_date, iter=True):
             assert order.status == status.canceled.value
         assert depart_date >= date.today()
-        depart_station_id = get._by(Station.id, name=depart_station)
-        arrive_station_id = get._by(Station.id, name=arrive_station)
-        depart_station = get._by(Journey, train_number=train_number, station_id=depart_station_id)
-        arrive_station = get._by(Journey, train_number=train_number, station_id=arrive_station_id)
+        depart_station_id = get._by(Station.id, name=depart_station, is_valid=True)
+        arrive_station_id = get._by(Station.id, name=arrive_station, is_valid=True)
+        depart_station = get._by(Journey, train_number=train_number, station_id=depart_station_id, is_valid=True)
+        arrive_station = get._by(Journey, train_number=train_number, station_id=arrive_station_id, is_valid=True)
         distance = arrive_station.distance - depart_station.distance
         assert distance > 0
         # add order
@@ -408,24 +409,28 @@ class add:
             'arrive_journey': arrive_station.id, 'price': basic_price*distance,
         }
         order = Order(**kwargs)
-        cls._all(order)
+        assert cls._all(order)
         return order
 
     @classmethod
-    def ticket(cls, order_id):
+    def ticket(cls, id=None, order=None):
         '''
         Argument:
-            - order_id: int
+            - id: NoneType or int
+            - order: NoneType or Order
         '''
-        order = get._by(Order, id=order_id, lock='read')
+        if id is not None:
+            order = get._by(Order, id=id, lock='read')
+        else:
+            id = order.id
         assert order is not None and order.status==status.booked.value
         order.status = status.paid.value
         ticket = Ticket(
             carriage_index=order.carriage_index, train_number=order.train_number,
-            depart_date=order.depart_date, seat_num=order.seat_num, order_id=order_id,
+            depart_date=order.depart_date, seat_num=order.seat_num, order_id=id,
             depart_journey=order.depart_journey, arrive_journey=order.arrive_journey,
         )
-        cls._all(ticket)
+        assert cls._all(ticket)
         return ticket
 
     @classmethod
@@ -442,7 +447,8 @@ class add:
             session.add_all(instances)
             session.commit()
             return True
-        except:
+        except Exception as e:
+            print(e)
             warn(f'Add fails: instances={instances}')
             session.rollback()
             return False
@@ -459,6 +465,61 @@ class add:
         '''
         f = lambda t: 60*(60*t.hour + t.minute) + t.second
         return f(end_time) - f(begin_time) + 86400*day
+
+
+class delete:
+    '''删除数据库数据
+    '''
+    @classmethod
+    def station(cls, name=None, id=None):
+        '''
+        Argument:
+            - name: NoneType or str
+            - id: NoneType or int
+        '''
+        if name is not None:
+            station = get._by(Station, name=name, is_valid=True)
+            station.is_valid = False
+            id = station.id
+        else:  # id is not None
+            station = get._by(Station, id=id, is_valid=True)
+            station.is_valid = False
+        train_numbers = get._by(Journey.train_number.distinct(), station_id=id, is_valid=True, all=True)
+        for train_number, in train_numbers:
+            journeys = get.journeys_by_train_number(train_number, lock='read')
+            for journey in journeys:
+                if journey.station_id == id:
+                    index = journey.station_index
+                    left, right = journey.arrive_time is None, journey.depart_time is None
+                    journey.station_index = - len(journeys)
+                    journey.arrive_time = journey.depart_time = None
+                    journey.arrive_day = journey.depart_day = None
+                    journey.is_valid = False
+                    break
+            for journey in journeys:
+                if journey.station_index > index:
+                    journey.station_index -= 1
+                if left and journey.station_index==index+1:
+                    journey.arrive_day = journey.arrive_time = None
+                if right and journey.station_index==index-1:
+                    journey.depart_day = journey.depart_time = None
+        cls._commit()
+
+    @classmethod
+    def _all(cls, *instances):
+        try:
+            for instance in instances:
+                session.delete(instance)
+            session.commit()
+            return True
+        except:
+            warn(f'Delete fails: instances={instances}')
+            session.rollback()
+            return False
+
+    @classmethod
+    def _commit(cls):
+        session.commit()
 
 
 if __name__ == '__main__':
@@ -506,5 +567,9 @@ if __name__ == '__main__':
     print(number)
 
     print('订票')
-    add.order(1, 'D1', 1, 10, date(2020, 5, 22), '北京', '沈阳南')
-    add.order(1, 'D1', 1, 11, date(2020, 5, 22), '北京', '沈阳南')
+    try:
+        order = add.order(1, 'D1', 1, 10, date(2020, 5, 22), '北京', '沈阳南')
+        ticket = add.ticket(order=order)
+    except:
+        ticket = get._by(Ticket)
+    print(ticket)
