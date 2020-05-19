@@ -29,8 +29,6 @@ create table station (
     name varchar(30) not null constraint stations_station_name_key unique,
     city_id integer constraint stations_city_id_fkey references city
 );
-create index station_id_index on journey (station_id, station_index, id);
-
 
 create table journey (
     id serial not null constraint journeys_pkey primary key,
@@ -44,6 +42,7 @@ create table journey (
     distance integer not null,
     constraint journeys_train_number_station_index_key unique (train_number, station_index)
 );
+create index station_id_index on journey (station_id, station_index, id);
 
 create table "user" (
     id serial not null constraint user_pk primary key,
@@ -59,7 +58,13 @@ create table "order" (
     status integer not null,
     price double precision not null,
     user_id integer not null constraint orders_person_fkey references "user",
-    create_date timestamp default (CURRENT_TIMESTAMP + '08:00:00'::interval) not null
+    create_date timestamp default (CURRENT_TIMESTAMP + '08:00:00'::interval) not null,
+    depart_journey integer not null constraint order_journey_id_fk references journey,
+    arrive_journey integer not null constraint order_journey_id_fk_2 references journey,
+    carriage_index integer not null,
+    seat_num varchar(10) not null,
+    depart_date timestamp not null,
+    train_number varchar(20) not null
 );
 
 create table ticket (
@@ -67,9 +72,10 @@ create table ticket (
     order_id integer not null constraint tickets_orders_fkey references "order",
     carriage_index integer not null,
     depart_journey integer not null constraint tickets_journeys_fkey1 references journey,
-    arrive_journey integer     not null constraint tickets_journeys_fkey2 references journey,
+    arrive_journey integer not null constraint tickets_journeys_fkey2 references journey,
     depart_date date not null,
-    seat_num varchar(10) not null
+    seat_num varchar(10) not null,
+    train_number varchar(20) not null
 );
 
 create table if not exists district (
@@ -77,6 +83,22 @@ create table if not exists district (
     code varchar not null,
     name varchar not null
 );
+
+create view database_storage as
+SELECT (
+    tables.table_schema::text || '.'::text) || tables.table_name::text,
+    pg_size_pretty(pg_table_size(tables.table_name::character varying::regclass)) AS table_size,
+    pg_size_pretty(pg_indexes_size(tables.table_name::character varying::regclass)) AS index_size,
+    pg_size_pretty(pg_total_relation_size(tables.table_name::character varying::regclass)) AS total_relation_size,
+    round(
+        pg_total_relation_size(tables.table_name::character varying::regclass)::numeric /
+            sum(pg_total_relation_size(tables.table_name::character varying::regclass)) OVER () * 100::numeric,
+        1
+    ) AS round
+FROM information_schema.tables
+WHERE tables.table_schema::name = CURRENT_SCHEMA
+    AND tables.table_type::text = 'BASE TABLE'::text
+ORDER BY (pg_total_relation_size(tables.table_name::character varying::regclass)) DESC;
 
 create or replace function is_id_valid(code varchar)
 returns bool as $body$
@@ -122,3 +144,22 @@ begin
     return true;
 end;
 $body$ language plpgsql;
+
+create function order_function()
+returns trigger language plpgsql
+as $$
+declare
+    status order.status%type;
+begin
+    status := new.status;
+    if status not in (1,2,3) then
+        new.status := 3;
+    end if;
+    return new;
+end;
+$$;
+
+create trigger order_trigger
+before insert on "order"
+for each row
+    execute procedure order_function();

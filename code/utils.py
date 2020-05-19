@@ -20,7 +20,7 @@ class check:
 
     @classmethod
     def id_card(cls, id_card):
-        assert id_card.replace('X', '').isdigit()
+        assert id_card.replace('X', '').isdigit() and len(id_card)==18
         return session.execute(f"select is_id_valid('{id_card}');").first()[0]
 
     @classmethod
