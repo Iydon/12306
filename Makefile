@@ -3,7 +3,8 @@ PORT = 8080
 PROJECT = cs307-project-2
 
 run:
-	flask run --host $(HOST) --port $(PORT)
+	export FLASK_APP=code \
+		&& flask run --host $(HOST) --port $(PORT)
 
 open:
 	sudo iptables -I INPUT -p tcp --dport $(PORT) -j ACCEPT
