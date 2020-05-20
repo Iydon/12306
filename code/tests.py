@@ -70,3 +70,7 @@ def add_random_order_and_ticket():
     )
     ticket = add.ticket(order=order)
     return order, ticket
+
+
+if __name__ == '__main__':
+    pass
