@@ -14,6 +14,7 @@ requests = "*"
 selenium = "*"
 pandas = "*"
 flask = "*"
+faker = "*"
 
 [requires]
 python_version = "3.8"

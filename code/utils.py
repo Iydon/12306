@@ -413,7 +413,7 @@ class add:
             - train_number: str
             - carriage_index: int
             - seat_num: int
-            - depart_date: datetime.datetime
+            - depart_date: datetime.date
             - depart_station: str
             - arrive_station: str
         '''
