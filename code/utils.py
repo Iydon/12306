@@ -3,11 +3,18 @@ from datetime import date, datetime
 from enum import Enum
 from warnings import warn
 
-from .database import (
-    Admin, User, City, Order, Station, Journey, SeatType, Capacity, Ticket,
-    session,
-)
-from .config import is_cached, residence_seconds
+try:
+    from .database import (
+        Admin, User, City, Order, Station, Journey, SeatType, Capacity, Ticket,
+        session,
+    )
+    from .config import is_cached, residence_seconds
+except:
+    from database import (
+        Admin, User, City, Order, Station, Journey, SeatType, Capacity, Ticket,
+        session,
+    )
+    from config import is_cached, residence_seconds
 
 
 status = Enum('status', ('booked', 'paid', 'canceled'))
@@ -198,7 +205,7 @@ class get:
         Return:
             - list[str]
         '''
-        return cls._compress(cls._by(Station.name, is_valid=True))
+        return cls._compress(cls._by(Station.name, is_valid=True, all=True))
 
     @classmethod
     def train_numbers(cls):
@@ -208,7 +215,7 @@ class get:
         Note:
             - 跨天：K529
         '''
-        return cls._compress(cls._by(Journey.train_number.distinct(), is_valid=True))
+        return cls._compress(cls._by(Journey.train_number.distinct(), is_valid=True, all=True))
 
     @classmethod
     def cities_by_province(cls, province):
@@ -632,7 +639,7 @@ if __name__ == '__main__':
         print(next(i))
 
     print('余票信息 D1 1 号车厢')
-    number = get.remaining_tickets_number('D1', 1, date(2020, 5, 20))
+    number = get.remaining_tickets_number('D2', 1, date(2020, 5, 20))
     print(number)
 
     print('订票')

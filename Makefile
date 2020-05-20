@@ -1,5 +1,6 @@
 HOST = 0.0.0.0
 PORT = 8080
+PROJECT = cs307-project-2
 
 run:
 	flask run --host $(HOST) --port $(PORT)
@@ -13,7 +14,7 @@ close:
 	sudo iptables -I OUTPUT -p tcp --sport $(PORT) -j DROP
 
 docker_deploy:
-	docker build -t cs307-project-2 .
+	docker build -t $(PROJECT) .
 
 docker_run:
-	docker run -p $(PORT):$(PORT) cs307-project-2
+	docker run -p $(PORT):$(PORT) $(PROJECT)

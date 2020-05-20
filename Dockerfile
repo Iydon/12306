@@ -1,6 +1,6 @@
 from python:3
 
-MAINTAINER liangiydon@gmail.com
+MAINTAINER liangiydon@gmail.com 82015697@qq.com
 
 COPY . /app
 WORKDIR /app

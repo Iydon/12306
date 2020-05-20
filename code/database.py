@@ -10,7 +10,10 @@ from sqlalchemy.ext.declarative import declarative_base
 
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from .config import database_url
+try:
+    from .config import database_url
+except:
+    from config import database_url
 
 
 Base = declarative_base()
